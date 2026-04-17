@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pandas
+yfinance
+numpy
+requests
+python-multipart
