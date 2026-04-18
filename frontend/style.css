@@ -1,0 +1,28 @@
+/* frontend/style.css */
+body {
+    background-color: #0f172a;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+/* Active single-stock selection */
+.active-link {
+    background-color: #1e293b !important;
+    border-left: 3px solid #3b82f6;
+    color: white !important;
+}
+
+/* Compare selection highlight */
+.compare-link {
+    background-color: #1c2a3a !important;
+    border-left: 3px solid #f59e0b;
+    color: #fbbf24 !important;
+}
+
+.stat-card {
+    transition: transform 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-4px);
+}
