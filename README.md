@@ -1,82 +1,161 @@
-# Stock Intelligence Dashboard
+# 📈 Stock Data Intelligence Dashboard
 
-A mini financial data platform built with FastAPI, yfinance, and Chart.js.
+> A full-stack financial data platform built as part of the Jarnox Internship Assignment.
+> Fetches real-world stock data, processes it with Pandas, serves it via FastAPI, and visualises it with an interactive Chart.js dashboard.
 
-## Features
+---
 
-- **Live stock data** fetched from Yahoo Finance via `yfinance`
-- **Calculated metrics**: Daily Return, 7-Day Moving Average, Volatility, Momentum Score
-- **52-week summary** with trend classification (Bullish / Bearish / Neutral)
-- **Compare two stocks** — normalised to base 100 for fair side-by-side charting
-- **Top gainers & losers** panel based on the latest trading day
-- **Interactive frontend** — dark-themed, built with Tailwind CSS and Chart.js
-- **Swagger API docs** at `http://127.0.0.1:8000/docs`
+## 🗺️ What This Project Does
 
-## Project Structure
+Think of this project as a mini Bloomberg Terminal — but one you built yourself.
+
+1. **It fetches stock prices** from Yahoo Finance (INFY, TCS, Reliance, Apple, Google, etc.)
+2. **It crunches the numbers** — calculates returns, moving averages, volatility, and momentum
+3. **It serves that data** through a clean REST API built with FastAPI
+4. **It draws the charts** on a dark-themed web dashboard using Chart.js
+
+If Yahoo Finance is unreachable (common in India due to DNS issues), the app **automatically generates realistic mock data** so the dashboard always works.
+
+---
+
+## ✨ Features at a Glance
+
+| Feature | What it does |
+|---|---|
+| 📊 Price Chart | Line chart of Close price + 7-Day Moving Average for last 30 days |
+| 📉 Volatility Chart | Bar chart of rolling 7-day volatility (risk indicator) |
+| 🏷️ Trend Badge | Auto-labels each stock as Bullish / Bearish / Neutral |
+| 🏆 Gainers & Losers | Sidebar panel showing today's top 3 movers |
+| ⚖️ Compare Mode | Ctrl+click two stocks to compare normalised performance |
+| 🔁 Mock Fallback | Generates realistic random-walk data if live fetch fails |
+| 📖 Swagger Docs | Auto-generated API docs at `/docs` |
+
+---
+
+## 🛠️ Tech Stack
+
+```
+Backend   →  Python 3.10+, FastAPI, Uvicorn
+Data      →  Pandas, NumPy, yfinance, Requests
+Frontend  →  HTML5, Tailwind CSS, Chart.js, Vanilla JS
+```
+
+---
+
+## ⚙️ Setup in 4 Steps
+
+### Step 1 — Clone the repo
+```bash
+git clone https://github.com/Akshat8510/stock-intelligence-dashboard.git
+cd stock-intelligence-dashboard
+```
+
+### Step 2 — Create a virtual environment
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Mac / Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### Step 3 — Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### Step 4 — Start the server
+```bash
+python -m uvicorn backend.main:app --reload
+```
+
+Then open **`http://127.0.0.1:8000`** in your browser.
+API docs are at **`http://127.0.0.1:8000/docs`**.
+
+---
+
+## 🌐 API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/companies` | GET | Returns all tracked company names and ticker symbols |
+| `/data/{symbol}` | GET | Last 30 days of OHLCV data + calculated metrics |
+| `/summary/{symbol}` | GET | 52-week high/low, avg close, momentum score, trend |
+| `/compare?symbol1=X&symbol2=Y` | GET | Normalised base-100 comparison of two stocks |
+| `/gainers-losers` | GET | Top 3 daily gainers and losers across all companies |
+
+> **Note:** Symbols with dots (like `INFY.NS`) are handled correctly using FastAPI's `{symbol:path}` routing.
+
+### Example
+```bash
+# Get Infosys summary
+curl http://127.0.0.1:8000/summary/INFY.NS
+
+# Compare TCS vs Infosys
+curl "http://127.0.0.1:8000/compare?symbol1=TCS.NS&symbol2=INFY.NS"
+```
+
+---
+
+## 📐 Metrics Explained
+
+| Metric | Formula | Why it matters |
+|---|---|---|
+| Daily Return | `(Close - Open) / Open` | How much the stock moved in a single day |
+| 7-Day MA | `Close.rolling(7).mean()` | Smooths out noise to show the short-term trend |
+| Volatility | `Daily_Return.rolling(7).std()` | Higher = riskier, more unpredictable price swings |
+| Momentum Score | `Close / MA20` | > 1.02 = Bullish, < 0.98 = Bearish, else Neutral |
+
+---
+
+## 💡 Design Decisions Worth Noting
+
+### Why `:path` in FastAPI routes?
+NSE ticker symbols contain dots (e.g. `INFY.NS`). FastAPI's default `{symbol}` pattern stops at the dot and returns a 404. Using `{symbol:path}` tells FastAPI to capture the full string including dots.
+
+### Why mock data?
+Yahoo Finance frequently blocks or rate-limits requests from Indian networks. Rather than showing a broken dashboard, the app detects a failed fetch and generates a realistic random-walk price series using each stock's real-world base price (₹1,500 for Infosys, ₹3,800 for TCS, etc.), so the charts always look meaningful.
+
+### Why normalised comparison?
+Comparing a ₹3,800 TCS share directly with a ₹1,500 Infosys share on the same chart is misleading. Both are rebased to 100 on day one, so the chart shows **percentage growth** — an apples-to-apples comparison.
+
+### Why load movers in the background?
+Fetching all 7 stocks at once on page load would freeze the sidebar for several seconds. The movers panel is loaded asynchronously (no `await`) so the watchlist appears instantly and the panel fills in once the data arrives.
+
+---
+
+## 📂 Project Structure
 
 ```
 stock-intelligence-dashboard/
 ├── backend/
 │   ├── __init__.py
-│   ├── main.py          # FastAPI app + all endpoints
-│   └── data_manager.py  # Data fetching, cleaning, and metric calculation
+│   ├── main.py           # FastAPI app, all route definitions
+│   └── data_manager.py   # Data fetching, cleaning, metrics, mock fallback
 ├── frontend/
-│   ├── index.html       # Dashboard UI
-│   ├── script.js        # API calls, chart rendering, compare logic
-│   └── style.css        # Custom styles (Tailwind + overrides)
+│   ├── index.html        # Dashboard layout
+│   ├── script.js         # API calls, chart rendering, compare logic
+│   └── style.css         # Tailwind overrides, active/compare link styles
 ├── requirements.txt
 └── README.md
 ```
 
-## Setup
+---
 
-**1. Create and activate a virtual environment**
-```bash
-python -m venv venv
-source venv/bin/activate        # macOS / Linux
-venv\Scripts\activate           # Windows
-```
+## 🐛 Troubleshooting
 
-**2. Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-**3. Run the server**
-```bash
-uvicorn backend.main:app --reload
-```
-
-The app will be available at `http://127.0.0.1:8000`.  
-The frontend dashboard is served at the root URL.  
-Swagger docs are at `http://127.0.0.1:8000/docs`.
-
-## API Endpoints
-
-| Endpoint | Method | Description |
+| Problem | Likely cause | Fix |
 |---|---|---|
-| `/companies` | GET | List all tracked companies |
-| `/data/{symbol}` | GET | Last 30 days of stock data with metrics |
-| `/summary/{symbol}` | GET | 52-week high, low, avg, momentum |
-| `/compare?symbol1=X&symbol2=Y` | GET | Normalised comparison of two stocks |
-| `/gainers-losers` | GET | Top 3 daily gainers and losers |
+| 404 on `/data/INFY.NS` | Old route without `:path` | Make sure `main.py` uses `{symbol:path}` |
+| Empty charts | Yahoo Finance blocked | App falls back to mock data automatically — just refresh |
+| `Module not found` error | Wrong working directory | Run `uvicorn` from the project root, not from inside `backend/` |
+| Port already in use | Another uvicorn is running | Run `Ctrl+C` in the old terminal first |
 
-## Metrics Explained
+---
 
-| Metric | Formula | Purpose |
-|---|---|---|
-| Daily Return | `(Close - Open) / Open` | Intraday price movement |
-| 7-Day MA | `Close.rolling(7).mean()` | Smoothed trend line |
-| Volatility | `Daily_Return.rolling(7).std()` | Short-term risk proxy |
-| Momentum Score | `Close / MA20` | Trend strength relative to 20-day average |
+## 📬 Submission
 
-**Trend classification**:  
-- `Momentum > 1.02` → **Bullish**  
-- `Momentum < 0.98` → **Bearish**  
-- Otherwise → **Neutral**
-
-## Usage Tips
-
-- Click any stock in the sidebar to load its dashboard.
-- **Ctrl+click** (or **Cmd+click** on Mac) to select two stocks for comparison, then click "Compare →".
-- The gainers/losers panel at the top of the sidebar refreshes on each page load.
+Built by **Akshat** for the Jarnox Internship Assignment.
+Submitted to: support@jarnox.com
